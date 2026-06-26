@@ -1,0 +1,54 @@
+/* Menu (StatusBarController) */
+"menu.version" = "Kuntraykun %@";
+"menu.no_apps" = "(No managed apps running)";
+"menu.settings" = "Settings…";
+"menu.check_update" = "Check for Updates…";
+"menu.install_update" = "Install Update %@…";
+"menu.quit" = "Quit Kuntraykun";
+
+/* Menu bar */
+"menu_bar.local" = "Local";
+
+/* Update flow */
+"update.latest" = "You’re up to date (v%@).";
+"update.check_failed" = "Failed to check for updates.\n%@";
+"update.available.title" = "Version %@ is available";
+"update.available.body" = "Current: v%@\nUpdating will restart the app.";
+"update.button.update" = "Update";
+"update.button.open_release" = "Open Release Page";
+"update.failed" = "Update failed.\n%@";
+"alert.error.title" = "Error";
+
+/* Update service errors */
+"error.fetch_release_http" = "Failed to fetch release info (HTTP %d).";
+"error.parse_release" = "Failed to parse release info.";
+"error.no_zip_asset" = "No zip asset found in the release.";
+"error.download_http" = "Download failed (HTTP %d).";
+
+/* Self-updater errors */
+"error.not_writable" = "Cannot write to the app location: %@. A manual update is required.";
+"error.no_zip" = "No zip found in the release.";
+"error.command_failed" = "Update command failed: %@";
+"error.no_app_in_archive" = "No .app was found in the downloaded archive.";
+"error.bundle_id_mismatch" = "The downloaded .app has a mismatched identifier.";
+
+/* Settings window */
+"settings.window.title" = "Kuntraykun Settings";
+
+/* Tabs */
+"tab.general" = "General";
+"tab.managed_apps" = "Managed Apps";
+
+/* General tab */
+"settings.launch_at_login" = "Launch at Login";
+"settings.version" = "Version %@";
+"login_item.requires_approval" = "“Login Items” is disabled in System Settings. Allow Kuntraykun under System Settings ＞ General ＞ Login Items.";
+
+/* Managed apps tab */
+"managed_apps.description" = "Choose the kun apps to consolidate into a single icon. Selected apps hide their own menu bar icon and become reachable from Kuntraykun’s icon (supported apps only).";
+"managed_apps.empty" = "No manageable kun apps were found in /Applications.";
+
+/* Common buttons */
+"button.ok" = "OK";
+"button.cancel" = "Cancel";
+"button.apply" = "Apply";

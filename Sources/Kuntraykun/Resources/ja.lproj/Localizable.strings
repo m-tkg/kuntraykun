@@ -1,0 +1,54 @@
+/* Menu (StatusBarController) */
+"menu.version" = "Kuntraykun %@";
+"menu.no_apps" = "（実行中の対象アプリがありません）";
+"menu.settings" = "設定…";
+"menu.check_update" = "アップデートを確認…";
+"menu.install_update" = "アップデート %@ をインストール…";
+"menu.quit" = "Kuntraykun を終了";
+
+/* Menu bar */
+"menu_bar.local" = "ローカル";
+
+/* Update flow */
+"update.latest" = "最新版です（v%@）。";
+"update.check_failed" = "アップデートの確認に失敗しました。\n%@";
+"update.available.title" = "新しいバージョン %@ があります";
+"update.available.body" = "現在: v%@\n更新するとアプリを再起動します。";
+"update.button.update" = "更新";
+"update.button.open_release" = "リリースページを開く";
+"update.failed" = "更新に失敗しました。\n%@";
+"alert.error.title" = "エラー";
+
+/* Update service errors */
+"error.fetch_release_http" = "リリース情報の取得に失敗しました（HTTP %d）。";
+"error.parse_release" = "リリース情報の解析に失敗しました。";
+"error.no_zip_asset" = "リリースに zip アセットが見つかりませんでした。";
+"error.download_http" = "ダウンロードに失敗しました（HTTP %d）。";
+
+/* Self-updater errors */
+"error.not_writable" = "アプリの場所に書き込めません: %@。手動での更新が必要です。";
+"error.no_zip" = "リリースに zip が見つかりませんでした。";
+"error.command_failed" = "更新コマンドが失敗しました: %@";
+"error.no_app_in_archive" = "ダウンロードしたアーカイブに .app が見つかりませんでした。";
+"error.bundle_id_mismatch" = "ダウンロードした .app の識別子が一致しませんでした。";
+
+/* Settings window */
+"settings.window.title" = "Kuntraykun 設定";
+
+/* Tabs */
+"tab.general" = "一般";
+"tab.managed_apps" = "管理アプリ";
+
+/* General tab */
+"settings.launch_at_login" = "ログイン時に自動起動";
+"settings.version" = "バージョン %@";
+"login_item.requires_approval" = "「ログイン項目」がシステム設定で無効になっています。システム設定 ＞ 一般 ＞ ログイン項目 で Kuntraykun を許可してください。";
+
+/* Managed apps tab */
+"managed_apps.description" = "1つのアイコンにまとめる kun アプリを選びます。選んだアプリは自分のメニューバーアイコンを隠し、Kuntraykun のアイコンから開けるようになります（対応アプリのみ）。";
+"managed_apps.empty" = "まとめられる kun アプリが /Applications に見つかりません。";
+
+/* Common buttons */
+"button.ok" = "OK";
+"button.cancel" = "キャンセル";
+"button.apply" = "適用";
