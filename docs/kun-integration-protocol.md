@@ -45,6 +45,22 @@ kun シリーズはいずれも非サンドボックス（Developer ID 署名）
 
 ---
 
+## v2: 実際のメニューバーアイコンの書き出し（任意・推奨）
+
+kuntraykun の一覧に各アプリの**実際のメニューバーアイコン（色・状態込み）**を表示するための仕組み。
+他プロセスの `NSStatusItem` の画像を直接読む公開 API が無いため、**各アプリが現在のアイコンを共有ファイルに書き出す**。
+
+- **共有場所**: `~/Library/Application Support/Kuntraykun/MenuBarIcons/`（`IntegrationProtocol.sharedIconDirRelativePath`）。
+  - `<基底bundleID>.png`: 現在のステータスアイコンを描画した PNG（18pt@2x=36px 目安、アスペクト保持）。
+  - `<基底bundleID>.template`: 空ファイル。**存在すればテンプレート画像**（単色・明暗追従）として扱う。色付き画像のときは作らない/削除する。
+- **アプリ側の書き出しタイミング**: 自分の `statusItem.button?.image` を設定するすべての箇所（起動時＋状態変化時）。
+  `image.isTemplate` を見てマーカーを書く/消す。`KuntraykunIconExport.export(_:)`（各アプリ同梱の小ヘルパー）を呼ぶだけ。
+- **kuntraykun 側の読み込み**: 一覧アイコンを「共有PNG → バンドル内 `MenuBarIcon.png` → アプリアイコン」の優先順で解決
+  （`KunAppIcon.image`）。メニューは開くたびに再構築するので、開いた時点の最新アイコン（gitkun の状態色など）が反映される。
+- 書き出しは任意。未対応アプリはバンドル内 `MenuBarIcon.png`（または Finder アイコン）にフォールバックする。
+
+---
+
 ## 管理対象アプリ側の必須挙動
 
 ### アイコン表示規則

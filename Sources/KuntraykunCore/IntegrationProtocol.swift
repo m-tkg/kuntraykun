@@ -15,6 +15,11 @@ public enum IntegrationProtocol {
     /// プロトコルバージョン。
     public static let version = "1"
 
+    /// v2: 各アプリが「実際のメニューバーアイコン」を書き出す共有ディレクトリ
+    /// （`~/Library/Application Support/` からの相対パス）。各アプリは `<基底bundleID>.png` を、
+    /// テンプレート画像の場合は併せて空ファイル `<基底bundleID>.template` を書き出す。kuntraykun がこれを読んで一覧に表示する。
+    public static let sharedIconDirRelativePath = "Kuntraykun/MenuBarIcons"
+
     // MARK: 通知名
 
     /// kuntraykun → 全アプリ。対象集合を知らせる（冪等ブロードキャスト）。
