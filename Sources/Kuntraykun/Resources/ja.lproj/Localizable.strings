@@ -45,7 +45,7 @@
 "login_item.requires_approval" = "「ログイン項目」がシステム設定で無効になっています。システム設定 ＞ 一般 ＞ ログイン項目 で Kuntraykun を許可してください。";
 
 /* Managed apps tab */
-"managed_apps.description" = "1つのアイコンにまとめる kun アプリを選びます。選んだアプリは自分のメニューバーアイコンを隠し、Kuntraykun のアイコンから開けるようになります（対応アプリのみ）。ドラッグで並べ替えると、その順序でプルダウンに表示されます。";
+"managed_apps.description" = "1つのアイコンにまとめる kun アプリを選びます。選んだアプリは自分のメニューバーアイコンを隠し、Kuntraykun のアイコンから開けるようになります（対応アプリのみ）。右の ▲▼ ボタンで並べ替えると、その順序でプルダウンに表示されます。";
 "managed_apps.empty" = "まとめられる kun アプリが /Applications に見つかりません。";
 
 /* Common buttons */

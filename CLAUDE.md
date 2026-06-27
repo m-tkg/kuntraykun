@@ -146,7 +146,7 @@ whisperkun …）を全部起動するとメニューバーのアイコンが増
 - 設定の「管理アプリ」タブで `/Applications` から検出した kun アプリを選ぶ（`KunAppScanner` ＋ `KunAppMatcher`）。
 - メニューバーアイコンをクリックすると、**選択済み かつ 実行中**の kun アプリだけがプルダウンに並ぶ
   （`KunAppMatcher.displayed`。未起動のアプリは出さない）。
-- **表示順はユーザーが変更できる**。設定「管理アプリ」タブのリストをドラッグで並べ替えると、その順序が
+- **表示順はユーザーが変更できる**。設定「管理アプリ」タブのリストを ▲▼ ボタンで並べ替えると、その順序が
   `ManagedAppsSettings.orderedBundleIDs`（基底 bundle ID 配列）に保存され、`KunAppMatcher.ordered` が
   その順でプルダウンを並べる（未登録のアプリは末尾に表示名昇順）。
 - 項目をクリックすると、その kun アプリへ「kuntraykun アイコン直下にメニューを出せ」と依頼し、対象アプリが
