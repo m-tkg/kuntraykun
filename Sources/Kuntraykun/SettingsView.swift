@@ -135,17 +135,37 @@ struct ManagedAppsSettingsTab: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
-                // ドラッグで並べ替え可能なリスト。並び順がプルダウンの表示順になる。
-                List {
-                    ForEach(orderedCatalog) { app in
-                        Toggle(isOn: binding(for: app.bundleID)) {
+                // ▲▼ ボタンで並べ替える。並び順がプルダウンの表示順になる。
+                // （小さい設定ウィンドウでは List のドラッグ並べ替えが 3 行目以降で効かないことがあるため、
+                //  確実に動くボタン方式にしている。）
+                ScrollView {
+                    VStack(spacing: 6) {
+                        let apps = orderedCatalog
+                        ForEach(Array(apps.enumerated()), id: \.element.id) { pair in
+                            let index = pair.offset
+                            let app = pair.element
                             HStack(spacing: 8) {
-                                Image(nsImage: Self.icon(for: app))
-                                Text(app.displayName)
+                                Toggle(isOn: binding(for: app.bundleID)) {
+                                    HStack(spacing: 8) {
+                                        Image(nsImage: Self.icon(for: app))
+                                        Text(app.displayName)
+                                    }
+                                }
+                                Spacer(minLength: 8)
+                                Button { reorder(from: index, to: index - 1) } label: {
+                                    Image(systemName: "chevron.up")
+                                }
+                                .buttonStyle(.borderless)
+                                .disabled(index == 0)
+                                Button { reorder(from: index, to: index + 1) } label: {
+                                    Image(systemName: "chevron.down")
+                                }
+                                .buttonStyle(.borderless)
+                                .disabled(index == apps.count - 1)
                             }
                         }
                     }
-                    .onMove(perform: move)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
@@ -161,10 +181,12 @@ struct ManagedAppsSettingsTab: View {
         KunAppMatcher.ordered(catalog, order: settings.orderedBundleIDs)
     }
 
-    /// ドラッグ並べ替え。表示中の順序を基底 bundle ID 配列として保存する。
-    private func move(from source: IndexSet, to destination: Int) {
+    /// ▲▼ による並べ替え。表示中の順序を基底 bundle ID 配列として保存する。
+    private func reorder(from: Int, to: Int) {
         var ids = orderedCatalog.map { IntegrationProtocol.baseBundleID($0.bundleID) }
-        ids.move(fromOffsets: source, toOffset: destination)
+        guard ids.indices.contains(from), to >= 0, to < ids.count else { return }
+        let id = ids.remove(at: from)
+        ids.insert(id, at: to)
         settings.orderedBundleIDs = ids
     }
 
