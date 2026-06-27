@@ -2,33 +2,18 @@ import SwiftUI
 import AppKit
 import KuntraykunCore
 
-/// 設定ダイアログの編集状態。編集は作業コピー上で行い、Apply/OK で確定する。
+/// 設定の編集状態。変更は**即時反映**する（Apply/OK ボタンは持たない）。
 @MainActor
 final class SettingsViewModel: ObservableObject {
-    /// 編集中の作業コピー。
-    @Published var settings: KuntraykunCore.Settings
-    /// 直近に確定（Apply/OK）した内容。Cancel 時の復帰先。
-    private var committed: KuntraykunCore.Settings
-    private let onApply: (KuntraykunCore.Settings) -> Void
-
-    init(settings: KuntraykunCore.Settings, onApply: @escaping (KuntraykunCore.Settings) -> Void) {
-        self.settings = settings
-        self.committed = settings
-        self.onApply = onApply
+    /// 設定。変更されるたびに `onChange` で保存・反映する。
+    @Published var settings: KuntraykunCore.Settings {
+        didSet { onChange(settings) }
     }
+    private let onChange: (KuntraykunCore.Settings) -> Void
 
-    /// 未確定の変更があるか。
-    var hasChanges: Bool { settings != committed }
-
-    /// 作業コピーを確定し保存・反映する。
-    func apply() {
-        committed = settings
-        onApply(settings)
-    }
-
-    /// 未確定の変更を破棄して直近の確定内容に戻す。
-    func revert() {
-        settings = committed
+    init(settings: KuntraykunCore.Settings, onChange: @escaping (KuntraykunCore.Settings) -> Void) {
+        self.onChange = onChange
+        self.settings = settings // init 内の代入では didSet は発火しない
     }
 }
 
@@ -38,45 +23,20 @@ struct SettingsView: View {
     @ObservedObject var viewModel: SettingsViewModel
     @ObservedObject var loginItem: LoginItemController
     let catalog: [KunApp]
-    let onClose: () -> Void
 
     @State private var loginItemError: String?
 
     var body: some View {
-        VStack(spacing: 0) {
-            TabView {
-                GeneralSettingsTab(loginItem: loginItem, errorMessage: $loginItemError)
-                    .tabItem { Text(L.string("tab.general")) }
+        // 変更は即時反映するため Cancel/Apply/OK ボタンは置かない。ウィンドウは閉じるボタンで閉じる。
+        TabView {
+            GeneralSettingsTab(loginItem: loginItem, errorMessage: $loginItemError)
+                .tabItem { Text(L.string("tab.general")) }
 
-                ManagedAppsSettingsTab(settings: $viewModel.settings.managedApps, catalog: catalog)
-                    .tabItem { Text(L.string("tab.managed_apps")) }
-                // 将来の機能タブはここに追加する。
-            }
-            .padding()
-
-            Divider()
-
-            HStack {
-                Spacer()
-                Button(L.string("button.cancel")) {
-                    viewModel.revert()
-                    onClose()
-                }
-                .keyboardShortcut(.cancelAction)
-
-                Button(L.string("button.apply")) {
-                    viewModel.apply()
-                }
-                .disabled(!viewModel.hasChanges)
-
-                Button(L.string("button.ok")) {
-                    viewModel.apply()
-                    onClose()
-                }
-                .keyboardShortcut(.defaultAction)
-            }
-            .padding()
+            ManagedAppsSettingsTab(settings: $viewModel.settings.managedApps, catalog: catalog)
+                .tabItem { Text(L.string("tab.managed_apps")) }
+            // 将来の機能タブはここに追加する。
         }
+        .padding()
         .frame(width: 460, height: 360)
         .alert(L.string("alert.error.title"), isPresented: Binding(
             get: { loginItemError != nil },
