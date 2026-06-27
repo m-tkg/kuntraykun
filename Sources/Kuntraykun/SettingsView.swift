@@ -168,8 +168,6 @@ struct ManagedAppsSettingsTab: View {
     }
 
     private static func icon(for app: KunApp) -> NSImage {
-        let icon = NSWorkspace.shared.icon(forFile: app.url.path)
-        icon.size = NSSize(width: 18, height: 18)
-        return icon
+        KunAppIcon.image(for: app, size: 18)
     }
 }

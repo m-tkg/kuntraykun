@@ -131,11 +131,9 @@ final class StatusBarController: NSObject, NSMenuDelegate {
 
     // MARK: - 画像
 
-    /// 各 kun アプリのアイコン（メニュー項目用に 16pt）。
+    /// 各 kun アプリのメニュー項目用アイコン（16pt）。各アプリのメニューバーアイコンに揃える。
     private static func appIcon(for app: KunApp) -> NSImage {
-        let icon = NSWorkspace.shared.icon(forFile: app.url.path)
-        icon.size = NSSize(width: 16, height: 16)
-        return icon
+        KunAppIcon.image(for: app, size: 16)
     }
 
     /// メニューバー用のテンプレート（モノクロ）画像。`Resources/MenuBarIcon.png` があれば使う。
