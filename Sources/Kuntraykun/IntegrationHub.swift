@@ -16,14 +16,22 @@ final class IntegrationHub {
     private let center = DistributedNotificationCenter.default()
     /// 現在の対象 bundle ID 集合を取得するクロージャ（AppDelegate の設定を参照）。
     private let enabledProvider: () -> Set<String>
+    /// 各アプリの「アップデートあり」状態が届いたときの通知（基底 bundleID, あり/なし）。
+    private let onUpdateState: (String, Bool) -> Void
     private var appLaunchedObserver: NSObjectProtocol?
+    private var updateStateObserver: NSObjectProtocol?
 
-    init(enabledProvider: @escaping () -> Set<String>) {
+    init(enabledProvider: @escaping () -> Set<String>,
+         onUpdateState: @escaping (String, Bool) -> Void) {
         self.enabledProvider = enabledProvider
+        self.onUpdateState = onUpdateState
     }
 
     deinit {
         if let observer = appLaunchedObserver {
+            DistributedNotificationCenter.default().removeObserver(observer)
+        }
+        if let observer = updateStateObserver {
             DistributedNotificationCenter.default().removeObserver(observer)
         }
     }
@@ -39,6 +47,18 @@ final class IntegrationHub {
                 let id = note.userInfo?[IntegrationProtocol.keyBundleID] as? String ?? "?"
                 log.info("appLaunched from \(id, privacy: .public); resending sync")
                 self?.broadcastSync()
+            }
+        }
+        // 各アプリの「アップデートあり」状態を観測する（v3）。
+        updateStateObserver = center.addObserver(
+            forName: Notification.Name(IntegrationProtocol.updateStateNotification),
+            object: nil,
+            queue: .main
+        ) { [weak self] note in
+            MainActor.assumeIsolated {
+                guard let id = note.userInfo?[IntegrationProtocol.keyBundleID] as? String else { return }
+                let hasUpdate = (note.userInfo?[IntegrationProtocol.keyHasUpdate] as? String) == "1"
+                self?.onUpdateState(IntegrationProtocol.baseBundleID(id), hasUpdate)
             }
         }
         broadcastSync()

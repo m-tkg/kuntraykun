@@ -28,6 +28,9 @@ public enum IntegrationProtocol {
     public static let showMenuNotification = "com.mtkg.kuntraykun.showMenu"
     /// アプリ → kuntraykun。連携対応アプリの起動を知らせる。
     public static let appLaunchedNotification = "com.mtkg.kun.appLaunched"
+    /// アプリ → kuntraykun。自分に「アップデートあり」かどうかを知らせる（v3）。
+    /// kuntraykun は集約してアイコンの赤バッジ・プルダウンの赤丸に反映する。
+    public static let updateStateNotification = "com.mtkg.kun.updateState"
 
     // MARK: userInfo キー
 
@@ -43,6 +46,8 @@ public enum IntegrationProtocol {
     public static let keyBundleID = "bundleID"
     /// appLaunched: プロトコルバージョン。
     public static let keyProtocol = "protocol"
+    /// updateState: アップデートの有無（"1"=あり / "0"=なし）。
+    public static let keyHasUpdate = "hasUpdate"
 
     /// 末尾 `.local`（ローカル検証ビルド）を取り除いた基底 bundle ID。
     /// ローカルビルドでも本番 ID として突き合わせられるようにする。
