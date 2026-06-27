@@ -20,6 +20,8 @@ final class StatusBarController: NSObject, NSMenuDelegate {
     private var updateAvailableTag: String?
     /// 新版ありを示す赤バッジ（アイコン右下にオーバーレイ）。
     private var badgeView: NSView?
+    /// 「アップデートあり」を報告してきた管理対象アプリの基底 bundle ID 集合（プルダウンの赤丸用）。
+    private var appsWithUpdate: Set<String> = []
 
     private static var checkUpdateTitle: String { L.string("menu.check_update") }
 
@@ -65,16 +67,27 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         statusItem.menu = menu
     }
 
-    /// 新バージョンが利用可能なときに記録する（次回のメニュー再構築で文言に反映）。赤バッジも表示する。
+    /// 新バージョンが利用可能なときに記録する（次回のメニュー再構築で文言に反映）。赤バッジも更新する。
     func setUpdateAvailable(tag: String) {
         updateAvailableTag = tag
-        badgeView?.isHidden = false
+        refreshBadge()
     }
 
-    /// 最新（更新なし）状態に戻す。赤バッジも消す。
+    /// 最新（更新なし）状態に戻す。赤バッジも更新する。
     func clearUpdateAvailable() {
         updateAvailableTag = nil
-        badgeView?.isHidden = true
+        refreshBadge()
+    }
+
+    /// 管理対象アプリの「アップデートあり」集合を更新する（集約バッジとプルダウンの赤丸に反映）。
+    func setAppsWithUpdate(_ ids: Set<String>) {
+        appsWithUpdate = ids
+        refreshBadge()
+    }
+
+    /// 自分の更新、またはいずれかの管理対象アプリの更新があれば赤バッジを表示する。
+    private func refreshBadge() {
+        badgeView?.isHidden = !(updateAvailableTag != nil || !appsWithUpdate.isEmpty)
     }
 
     /// 赤バッジをアイコン右下へオーバーレイする。位置はアイコン画像の幅基準で固定し、
@@ -128,6 +141,10 @@ final class StatusBarController: NSObject, NSMenuDelegate {
                 item.target = self
                 item.representedObject = app
                 item.image = Self.appIcon(for: app)
+                // アップデートありのアプリは行末に赤丸を付ける。
+                if appsWithUpdate.contains(IntegrationProtocol.baseBundleID(app.bundleID)) {
+                    item.attributedTitle = Self.titleWithUpdateDot(app.displayName)
+                }
                 menu.addItem(item)
             }
         }
@@ -161,6 +178,13 @@ final class StatusBarController: NSObject, NSMenuDelegate {
     /// 各 kun アプリのメニュー項目用アイコン（16pt）。各アプリのメニューバーアイコンに揃える。
     private static func appIcon(for app: KunApp) -> NSImage {
         KunAppIcon.image(for: app, size: 16)
+    }
+
+    /// 表示名の末尾に赤丸（●）を付けた属性付きタイトル（アップデートあり表示用）。
+    private static func titleWithUpdateDot(_ name: String) -> NSAttributedString {
+        let result = NSMutableAttributedString(string: name + "  ")
+        result.append(NSAttributedString(string: "●", attributes: [.foregroundColor: NSColor.systemRed]))
+        return result
     }
 
     /// メニューバー用のテンプレート（モノクロ）画像。`Resources/MenuBarIcon.png` があれば使う。

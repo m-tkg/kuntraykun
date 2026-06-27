@@ -17,8 +17,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusBar: StatusBarController?
     private var settingsWindowController: SettingsWindowController?
     private lazy var hub = IntegrationHub(
-        enabledProvider: { [weak self] in self?.settings.managedApps.enabledBundleIDs ?? [] }
+        enabledProvider: { [weak self] in self?.settings.managedApps.enabledBundleIDs ?? [] },
+        onUpdateState: { [weak self] baseID, hasUpdate in self?.handleUpdateState(baseID, hasUpdate) }
     )
+    /// 「アップデートあり」を報告してきた管理対象アプリの基底 bundle ID 集合。
+    private var appsWithUpdate: Set<String> = []
 
     // アップデート関連。
     private let updateService = UpdateService()
@@ -42,6 +45,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         // 起動時にサイレントで更新チェック（あればメニュー文言を変更）。
         startUpdateCheck(interactive: false)
+    }
+
+    /// 管理対象アプリから届いた「アップデートあり/なし」を集約し、アイコンの赤バッジと
+    /// プルダウンの赤丸に反映する。
+    private func handleUpdateState(_ baseID: String, _ hasUpdate: Bool) {
+        let changed: Bool
+        if hasUpdate { changed = appsWithUpdate.insert(baseID).inserted }
+        else { changed = appsWithUpdate.remove(baseID) != nil }
+        if changed { statusBar?.setAppsWithUpdate(appsWithUpdate) }
     }
 
     /// メニューに表示する対象アプリ（選択済み かつ 実行中）。
