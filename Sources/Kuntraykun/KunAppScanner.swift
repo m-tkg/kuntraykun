@@ -20,7 +20,9 @@ enum KunAppScanner {
                   let bundleID = bundle.bundleIdentifier,
                   KunAppMatcher.isManageable(bundleID: bundleID)
             else { continue }
-            let name = fm.displayName(atPath: url.path)
+            // Finder の設定（拡張子を常に表示）次第で displayName に `.app` が付くため取り除く。
+            var name = fm.displayName(atPath: url.path)
+            if name.hasSuffix(".app") { name = String(name.dropLast(4)) }
             apps.append(KunApp(bundleID: bundleID, displayName: name, url: url))
         }
         return apps.sorted {
