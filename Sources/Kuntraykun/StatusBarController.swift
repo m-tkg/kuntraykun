@@ -18,6 +18,8 @@ final class StatusBarController: NSObject, NSMenuDelegate {
 
     /// 新バージョンが利用可能ならそのタグ。メニュー再構築時に文言へ反映する。
     private var updateAvailableTag: String?
+    /// 新版ありを示す赤バッジ（アイコン右下にオーバーレイ）。
+    private var badgeView: NSView?
 
     private static var checkUpdateTitle: String { L.string("menu.check_update") }
 
@@ -54,6 +56,7 @@ final class StatusBarController: NSObject, NSMenuDelegate {
                 button.title = " " + L.string("menu_bar.local")
                 button.imagePosition = .imageLeading
             }
+            installBadge(on: button)
         }
 
         // 動的メニュー。開くたびに menuNeedsUpdate で作り直す。
@@ -62,11 +65,35 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         statusItem.menu = menu
     }
 
-    /// 新バージョンが利用可能なときに記録する（次回のメニュー再構築で文言に反映）。
-    func setUpdateAvailable(tag: String) { updateAvailableTag = tag }
+    /// 新バージョンが利用可能なときに記録する（次回のメニュー再構築で文言に反映）。赤バッジも表示する。
+    func setUpdateAvailable(tag: String) {
+        updateAvailableTag = tag
+        badgeView?.isHidden = false
+    }
 
-    /// 最新（更新なし）状態に戻す。
-    func clearUpdateAvailable() { updateAvailableTag = nil }
+    /// 最新（更新なし）状態に戻す。赤バッジも消す。
+    func clearUpdateAvailable() {
+        updateAvailableTag = nil
+        badgeView?.isHidden = true
+    }
+
+    /// 赤バッジをアイコン右下へオーバーレイする。位置はアイコン画像の幅基準で固定し、
+    /// 「ローカル」テキスト併記時（imagePosition = .imageLeading）でも常にアイコングリフの右下に乗せる。
+    private func installBadge(on button: NSStatusBarButton) {
+        let size: CGFloat = 8
+        let iconWidth = button.image?.size.width ?? 18
+        let badge = UpdateBadgeView(diameter: size)
+        badge.translatesAutoresizingMaskIntoConstraints = false
+        badge.isHidden = true
+        button.addSubview(badge)
+        NSLayoutConstraint.activate([
+            badge.widthAnchor.constraint(equalToConstant: size),
+            badge.heightAnchor.constraint(equalToConstant: size),
+            badge.leadingAnchor.constraint(equalTo: button.leadingAnchor, constant: iconWidth - size),
+            badge.bottomAnchor.constraint(equalTo: button.bottomAnchor),
+        ])
+        badgeView = badge
+    }
 
     /// ステータスボタンの左下のスクリーン座標（Cocoa 座標・左下原点）。`showMenu` の表示位置に使う。
     func buttonScreenPoint() -> CGPoint? {
