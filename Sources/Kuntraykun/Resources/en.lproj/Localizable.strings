@@ -45,7 +45,7 @@
 "login_item.requires_approval" = "“Login Items” is disabled in System Settings. Allow Kuntraykun under System Settings ＞ General ＞ Login Items.";
 
 /* Managed apps tab */
-"managed_apps.description" = "Choose the kun apps to consolidate into a single icon. Selected apps hide their own menu bar icon and become reachable from Kuntraykun’s icon (supported apps only).";
+"managed_apps.description" = "Choose the kun apps to consolidate into a single icon. Selected apps hide their own menu bar icon and become reachable from Kuntraykun’s icon (supported apps only). Drag to reorder; the pulldown follows this order.";
 "managed_apps.empty" = "No manageable kun apps were found in /Applications.";
 
 /* Common buttons */

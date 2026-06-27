@@ -29,18 +29,25 @@ public struct Settings: Codable, Equatable {
 public struct ManagedAppsSettings: Codable, Equatable {
     /// まとめる対象として選択された kun アプリの bundle ID 集合。
     public var enabledBundleIDs: Set<String>
+    /// プルダウンに表示する順序（基底 bundle ID を並べた配列）。
+    /// ここに無いアプリは末尾に表示名昇順で続く。空なら従来どおり全て表示名昇順。
+    public var orderedBundleIDs: [String]
 
-    public init(enabledBundleIDs: Set<String> = []) {
+    public init(enabledBundleIDs: Set<String> = [], orderedBundleIDs: [String] = []) {
         self.enabledBundleIDs = enabledBundleIDs
+        self.orderedBundleIDs = orderedBundleIDs
     }
 
     private enum CodingKeys: String, CodingKey {
         case enabledBundleIDs
+        case orderedBundleIDs
     }
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.enabledBundleIDs = try container.decodeIfPresent(Set<String>.self, forKey: .enabledBundleIDs)
+            ?? []
+        self.orderedBundleIDs = try container.decodeIfPresent([String].self, forKey: .orderedBundleIDs)
             ?? []
     }
 }
