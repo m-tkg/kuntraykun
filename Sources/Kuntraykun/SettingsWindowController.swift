@@ -14,9 +14,9 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
     init(
         initialSettings: KuntraykunCore.Settings,
         catalog: [KunApp],
-        onApply: @escaping (KuntraykunCore.Settings) -> Void
+        onChange: @escaping (KuntraykunCore.Settings) -> Void
     ) {
-        self.viewModel = SettingsViewModel(settings: initialSettings, onApply: onApply)
+        self.viewModel = SettingsViewModel(settings: initialSettings, onChange: onChange)
         self.catalog = catalog
         super.init()
     }
@@ -28,8 +28,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
             let rootView = SettingsView(
                 viewModel: viewModel,
                 loginItem: loginItem,
-                catalog: catalog,
-                onClose: { [weak self] in self?.window?.close() }
+                catalog: catalog
             )
             let hosting = NSHostingController(rootView: rootView)
             let window = NSWindow(contentViewController: hosting)

@@ -69,11 +69,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             settingsWindowController = SettingsWindowController(
                 initialSettings: settings,
                 catalog: catalog,
-                onApply: { [weak self] newSettings in
+                onChange: { [weak self] newSettings in
                     guard let self else { return }
+                    // 変更は即時反映: 保存して、対象集合の変化を即ブロードキャストし各アプリのアイコン表示を更新させる。
                     self.settings = newSettings
                     try? self.store.save(newSettings)
-                    // 対象集合が変わったので即座にブロードキャストし、各アプリのアイコン表示を更新させる。
                     self.hub.broadcastSync()
                 }
             )
