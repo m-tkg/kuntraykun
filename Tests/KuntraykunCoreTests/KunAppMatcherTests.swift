@@ -6,6 +6,43 @@ final class KunAppMatcherTests: XCTestCase {
         KunApp(bundleID: bundleID, displayName: name, url: URL(fileURLWithPath: "/Applications/\(name).app"))
     }
 
+    // MARK: ordered
+
+    func testOrderedFollowsOrderThenNameForUnlisted() {
+        let catalog = [
+            app("com.mtkg.snapperkun", "Snapperkun"),
+            app("com.mtkg.clipkun", "Clipkun"),
+            app("com.mtkg.keykun", "Keykun"),
+        ]
+        // order に keykun, clipkun を指定 → その順 → 残り(snapperkun)は名前順で末尾
+        let result = KunAppMatcher.ordered(catalog, order: ["com.mtkg.keykun", "com.mtkg.clipkun"])
+        XCTAssertEqual(result.map(\.bundleID),
+                       ["com.mtkg.keykun", "com.mtkg.clipkun", "com.mtkg.snapperkun"])
+    }
+
+    func testOrderedEmptyOrderIsNameSorted() {
+        let catalog = [app("com.mtkg.snapperkun", "Snapperkun"), app("com.mtkg.clipkun", "Clipkun")]
+        XCTAssertEqual(KunAppMatcher.ordered(catalog, order: []).map(\.displayName),
+                       ["Clipkun", "Snapperkun"])
+    }
+
+    func testOrderedMatchesLocalBuildBaseID() {
+        let catalog = [app("com.mtkg.clipkun.local", "Clipkun"), app("com.mtkg.keykun", "Keykun")]
+        let result = KunAppMatcher.ordered(catalog, order: ["com.mtkg.clipkun", "com.mtkg.keykun"])
+        XCTAssertEqual(result.map(\.displayName), ["Clipkun", "Keykun"])
+    }
+
+    func testDisplayedRespectsOrder() {
+        let catalog = [app("com.mtkg.clipkun", "Clipkun"), app("com.mtkg.keykun", "Keykun")]
+        let result = KunAppMatcher.displayed(
+            catalog: catalog,
+            enabled: ["com.mtkg.clipkun", "com.mtkg.keykun"],
+            running: ["com.mtkg.clipkun", "com.mtkg.keykun"],
+            order: ["com.mtkg.keykun", "com.mtkg.clipkun"]
+        )
+        XCTAssertEqual(result.map(\.bundleID), ["com.mtkg.keykun", "com.mtkg.clipkun"])
+    }
+
     // MARK: isManageable
 
     func testManageableForKunApps() {

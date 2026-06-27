@@ -49,7 +49,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         KunAppMatcher.displayed(
             catalog: catalog,
             enabled: settings.managedApps.enabledBundleIDs,
-            running: KunAppScanner.runningBundleIDs()
+            running: KunAppScanner.runningBundleIDs(),
+            order: settings.managedApps.orderedBundleIDs
         )
     }
 

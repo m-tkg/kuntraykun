@@ -135,25 +135,37 @@ struct ManagedAppsSettingsTab: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 8) {
-                        ForEach(catalog) { app in
-                            Toggle(isOn: binding(for: app.bundleID)) {
-                                HStack(spacing: 8) {
-                                    Image(nsImage: Self.icon(for: app))
-                                    Text(app.displayName)
-                                }
+                // ドラッグで並べ替え可能なリスト。並び順がプルダウンの表示順になる。
+                List {
+                    ForEach(orderedCatalog) { app in
+                        Toggle(isOn: binding(for: app.bundleID)) {
+                            HStack(spacing: 8) {
+                                Image(nsImage: Self.icon(for: app))
+                                Text(app.displayName)
                             }
                         }
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .onMove(perform: move)
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
 
             Spacer(minLength: 0)
         }
         .padding(20)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+
+    /// 表示順（プルダウンの並び）に並べたカタログ。
+    private var orderedCatalog: [KunApp] {
+        KunAppMatcher.ordered(catalog, order: settings.orderedBundleIDs)
+    }
+
+    /// ドラッグ並べ替え。表示中の順序を基底 bundle ID 配列として保存する。
+    private func move(from source: IndexSet, to destination: Int) {
+        var ids = orderedCatalog.map { IntegrationProtocol.baseBundleID($0.bundleID) }
+        ids.move(fromOffsets: source, toOffset: destination)
+        settings.orderedBundleIDs = ids
     }
 
     /// 対象集合への所属を表す Toggle 用 Binding。
