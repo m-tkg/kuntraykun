@@ -28,6 +28,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private lazy var selfUpdater = SelfUpdater(service: updateService)
     private var availableRelease: ReleaseInfo?
 
+    /// 未起動警告の定期再評価用タイマー。
+    private var warningRefreshTimer: Timer?
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         settings = store.load()
         catalog = KunAppScanner.scan()
@@ -44,22 +47,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         hub.start()
 
         // 管理対象アプリの起動/終了で警告バッジを更新する（メニューを開かなくても常時最新化）。
-        observeAppRunningChanges()
+        startWarningRefreshTimer()
         refreshWarning()
 
         // 起動時にサイレントで更新チェック（あればメニュー文言を変更）。
         startUpdateCheck(interactive: false)
     }
 
-    /// アプリの起動/終了を監視して未起動警告を再評価する。
-    /// 全アプリで発火するが評価は軽量なのでデバウンスは不要。
-    private func observeAppRunningChanges() {
-        let nc = NSWorkspace.shared.notificationCenter
-        for name in [NSWorkspace.didLaunchApplicationNotification,
-                     NSWorkspace.didTerminateApplicationNotification] {
-            nc.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
-                MainActor.assumeIsolated { self?.refreshWarning() }
-            }
+    /// 数秒おきに未起動警告を再評価する。
+    ///
+    /// 当初は `NSWorkspace.didLaunchApplicationNotification` /
+    /// `didTerminateApplicationNotification` の購読で即時反映しようとしたが、
+    /// これらの通知は LSUIElement（Dockアイコンなしのメニューバー常駐）アプリの
+    /// 起動/終了では発火しないことを実機で確認した（通常の Dock アプリでは発火する）。
+    /// kun アプリは全て LSUIElement のため、その方式では警告が一切更新されなかった。
+    /// そのため確実に動く軽量なポーリングに切り替える。
+    private func startWarningRefreshTimer() {
+        warningRefreshTimer = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated { self?.refreshWarning() }
         }
     }
 
