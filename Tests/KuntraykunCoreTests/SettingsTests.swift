@@ -26,4 +26,23 @@ final class SettingsTests: XCTestCase {
         let decoded = try JSONDecoder().decode(Settings.self, from: data)
         XCTAssertTrue(decoded.managedApps.enabledBundleIDs.isEmpty)
     }
+
+    func testWarnWhenAppsNotRunningDefaultsToTrue() {
+        XCTAssertTrue(Settings.default.managedApps.warnWhenAppsNotRunning)
+    }
+
+    func testMissingWarnFlagFallsBackToTrue() throws {
+        // 旧フォーマット（フラグ無し）でも既定 true にフォールバックする（後方互換）。
+        let data = Data(#"{"managedApps":{"enabledBundleIDs":["com.mtkg.clipkun"]}}"#.utf8)
+        let decoded = try JSONDecoder().decode(Settings.self, from: data)
+        XCTAssertTrue(decoded.managedApps.warnWhenAppsNotRunning)
+    }
+
+    func testWarnFlagRoundTripsThroughJSON() throws {
+        var s = Settings.default
+        s.managedApps.warnWhenAppsNotRunning = false
+        let data = try JSONEncoder().encode(s)
+        let decoded = try JSONDecoder().decode(Settings.self, from: data)
+        XCTAssertFalse(decoded.managedApps.warnWhenAppsNotRunning)
+    }
 }

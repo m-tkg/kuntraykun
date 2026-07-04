@@ -32,15 +32,23 @@ public struct ManagedAppsSettings: Codable, Equatable {
     /// プルダウンに表示する順序（基底 bundle ID を並べた配列）。
     /// ここに無いアプリは末尾に表示名昇順で続く。空なら従来どおり全て表示名昇順。
     public var orderedBundleIDs: [String]
+    /// 選択済みの管理対象アプリが起動していないとき、メニューバーアイコンに警告（黄三角）を出すか。
+    public var warnWhenAppsNotRunning: Bool
 
-    public init(enabledBundleIDs: Set<String> = [], orderedBundleIDs: [String] = []) {
+    public init(
+        enabledBundleIDs: Set<String> = [],
+        orderedBundleIDs: [String] = [],
+        warnWhenAppsNotRunning: Bool = true
+    ) {
         self.enabledBundleIDs = enabledBundleIDs
         self.orderedBundleIDs = orderedBundleIDs
+        self.warnWhenAppsNotRunning = warnWhenAppsNotRunning
     }
 
     private enum CodingKeys: String, CodingKey {
         case enabledBundleIDs
         case orderedBundleIDs
+        case warnWhenAppsNotRunning
     }
 
     public init(from decoder: Decoder) throws {
@@ -49,5 +57,7 @@ public struct ManagedAppsSettings: Codable, Equatable {
             ?? []
         self.orderedBundleIDs = try container.decodeIfPresent([String].self, forKey: .orderedBundleIDs)
             ?? []
+        self.warnWhenAppsNotRunning = try container.decodeIfPresent(Bool.self, forKey: .warnWhenAppsNotRunning)
+            ?? true
     }
 }

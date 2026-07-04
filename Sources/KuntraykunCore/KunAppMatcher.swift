@@ -28,6 +28,24 @@ public enum KunAppMatcher {
         }
     }
 
+    /// 「選択済み（enabled）だが起動していない」管理対象アプリが1つでもあるか。
+    /// メニューバーアイコンへ未起動の警告を出すかの判定に使う。
+    /// 比較は基底 bundle ID で行い、対象アプリがローカルビルドでも一致させる。
+    /// カタログに存在するものだけを対象にし、アンインストール済み（enabled に残るがカタログ未検出）の
+    /// アプリで誤検出しない。
+    public static func hasMissingManagedApps(
+        catalog: [KunApp],
+        enabled: Set<String>,
+        running: Set<String>
+    ) -> Bool {
+        let enabledBase = Set(enabled.map(IntegrationProtocol.baseBundleID))
+        let runningBase = Set(running.map(IntegrationProtocol.baseBundleID))
+        return catalog.contains { app in
+            let base = IntegrationProtocol.baseBundleID(app.bundleID)
+            return enabledBase.contains(base) && !runningBase.contains(base)
+        }
+    }
+
     /// メニューに表示する対象アプリ（= 選択済み かつ 実行中）を、`order` の順で返す。
     /// 比較は基底 bundle ID で行い、対象アプリがローカルビルドでも一致させる。
     public static func displayed(
