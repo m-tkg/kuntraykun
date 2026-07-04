@@ -130,6 +130,10 @@ struct ManagedAppsSettingsTab: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
 
+            Divider()
+            // 選択済みアプリが未起動のとき、メニューバーアイコンに黄三角の警告を出すか。
+            Toggle(L.string("managed_apps.warn_not_running"), isOn: $settings.warnWhenAppsNotRunning)
+
             Spacer(minLength: 0)
         }
         .padding(20)

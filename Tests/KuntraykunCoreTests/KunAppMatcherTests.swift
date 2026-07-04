@@ -121,4 +121,47 @@ final class KunAppMatcherTests: XCTestCase {
             catalog: catalog, enabled: ["com.mtkg.clipkun"], running: [])
         XCTAssertTrue(result.isEmpty)
     }
+
+    // MARK: hasMissingManagedApps
+
+    func testMissingTrueWhenEnabledAppNotRunning() {
+        let catalog = [app("com.mtkg.clipkun", "Clipkun"), app("com.mtkg.keykun", "Keykun")]
+        // clipkun, keykun を選択、clipkun のみ実行中 → keykun が未起動
+        XCTAssertTrue(KunAppMatcher.hasMissingManagedApps(
+            catalog: catalog,
+            enabled: ["com.mtkg.clipkun", "com.mtkg.keykun"],
+            running: ["com.mtkg.clipkun"]))
+    }
+
+    func testMissingFalseWhenAllEnabledRunning() {
+        let catalog = [app("com.mtkg.clipkun", "Clipkun"), app("com.mtkg.keykun", "Keykun")]
+        XCTAssertFalse(KunAppMatcher.hasMissingManagedApps(
+            catalog: catalog,
+            enabled: ["com.mtkg.clipkun", "com.mtkg.keykun"],
+            running: ["com.mtkg.clipkun", "com.mtkg.keykun"]))
+    }
+
+    func testMissingFalseWhenNoneEnabled() {
+        let catalog = [app("com.mtkg.clipkun", "Clipkun")]
+        XCTAssertFalse(KunAppMatcher.hasMissingManagedApps(
+            catalog: catalog, enabled: [], running: []))
+    }
+
+    func testMissingIgnoresEnabledAppNotInCatalog() {
+        // enabled に残るがアンインストール済み（カタログ未検出）のアプリは警告対象にしない。
+        let catalog = [app("com.mtkg.clipkun", "Clipkun")]
+        XCTAssertFalse(KunAppMatcher.hasMissingManagedApps(
+            catalog: catalog,
+            enabled: ["com.mtkg.clipkun", "com.mtkg.removedkun"],
+            running: ["com.mtkg.clipkun"]))
+    }
+
+    func testMissingMatchesRunningLocalBuildAgainstEnabledBaseID() {
+        // 実行中がローカルビルド ID でも基底一致で「起動中」と見なす。
+        let catalog = [app("com.mtkg.clipkun", "Clipkun")]
+        XCTAssertFalse(KunAppMatcher.hasMissingManagedApps(
+            catalog: catalog,
+            enabled: ["com.mtkg.clipkun"],
+            running: ["com.mtkg.clipkun.local"]))
+    }
 }

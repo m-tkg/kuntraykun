@@ -18,10 +18,14 @@ final class StatusBarController: NSObject, NSMenuDelegate {
 
     /// 新バージョンが利用可能ならそのタグ。メニュー再構築時に文言へ反映する。
     private var updateAvailableTag: String?
-    /// 新版ありを示す赤バッジ（アイコン右下にオーバーレイ）。
+    /// 新版ありを示す赤バッジ（アイコン右上にオーバーレイ）。
     private var badgeView: NSView?
     /// 「アップデートあり」を報告してきた管理対象アプリの基底 bundle ID 集合（プルダウンの赤丸用）。
     private var appsWithUpdate: Set<String> = []
+    /// 選択済みの管理対象アプリが未起動のときに出す警告バッジ（アイコン右下にオーバーレイ）。
+    private var warningView: NSView?
+    /// 未起動の管理対象アプリがあるか（警告バッジの表示判定）。
+    private var hasMissingApps = false
 
     private static var checkUpdateTitle: String { L.string("menu.check_update") }
 
@@ -59,6 +63,7 @@ final class StatusBarController: NSObject, NSMenuDelegate {
                 button.imagePosition = .imageLeading
             }
             installBadge(on: button)
+            installWarningBadge(on: button)
         }
 
         // 動的メニュー。開くたびに menuNeedsUpdate で作り直す。
@@ -85,13 +90,25 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         refreshBadge()
     }
 
+    /// 選択済みの管理対象アプリが未起動かどうかを記録する（警告バッジに反映）。
+    func setManagedAppsMissing(_ missing: Bool) {
+        hasMissingApps = missing
+        refreshWarning()
+    }
+
     /// 自分の更新、またはいずれかの管理対象アプリの更新があれば赤バッジを表示する。
     private func refreshBadge() {
         badgeView?.isHidden = !(updateAvailableTag != nil || !appsWithUpdate.isEmpty)
     }
 
-    /// 赤バッジをアイコン右下へオーバーレイする。位置はアイコン画像の幅基準で固定し、
-    /// 「ローカル」テキスト併記時（imagePosition = .imageLeading）でも常にアイコングリフの右下に乗せる。
+    /// 未起動の管理対象アプリがあれば黄三角の警告バッジを表示する。
+    private func refreshWarning() {
+        warningView?.isHidden = !hasMissingApps
+    }
+
+    /// 赤バッジをアイコン右上へオーバーレイする。位置はアイコン画像の幅基準で固定し、
+    /// 「ローカル」テキスト併記時（imagePosition = .imageLeading）でも常にアイコングリフの右上に乗せる。
+    /// 右下は未起動の警告バッジが使う（重なりを避けるため隅を分ける）。
     private func installBadge(on button: NSStatusBarButton) {
         let size: CGFloat = 8
         let iconWidth = button.image?.size.width ?? 18
@@ -103,9 +120,26 @@ final class StatusBarController: NSObject, NSMenuDelegate {
             badge.widthAnchor.constraint(equalToConstant: size),
             badge.heightAnchor.constraint(equalToConstant: size),
             badge.leadingAnchor.constraint(equalTo: button.leadingAnchor, constant: iconWidth - size),
-            badge.bottomAnchor.constraint(equalTo: button.bottomAnchor),
+            badge.topAnchor.constraint(equalTo: button.topAnchor),
         ])
         badgeView = badge
+    }
+
+    /// 警告バッジ（黄三角）をアイコン右下へオーバーレイする。位置の基準は赤バッジと同じ。
+    private func installWarningBadge(on button: NSStatusBarButton) {
+        let size: CGFloat = 9
+        let iconWidth = button.image?.size.width ?? 18
+        let badge = WarningBadgeView(diameter: size)
+        badge.translatesAutoresizingMaskIntoConstraints = false
+        badge.isHidden = true
+        button.addSubview(badge)
+        NSLayoutConstraint.activate([
+            badge.widthAnchor.constraint(equalToConstant: size),
+            badge.heightAnchor.constraint(equalToConstant: size),
+            badge.leadingAnchor.constraint(equalTo: button.leadingAnchor, constant: iconWidth - size),
+            badge.bottomAnchor.constraint(equalTo: button.bottomAnchor),
+        ])
+        warningView = badge
     }
 
     /// ステータスボタンの左下のスクリーン座標（Cocoa 座標・左下原点）。`showMenu` の表示位置に使う。

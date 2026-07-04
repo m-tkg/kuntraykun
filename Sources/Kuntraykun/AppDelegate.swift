@@ -43,8 +43,35 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // 連携ハブを開始（起動時の sync をブロードキャスト）。
         hub.start()
 
+        // 管理対象アプリの起動/終了で警告バッジを更新する（メニューを開かなくても常時最新化）。
+        observeAppRunningChanges()
+        refreshWarning()
+
         // 起動時にサイレントで更新チェック（あればメニュー文言を変更）。
         startUpdateCheck(interactive: false)
+    }
+
+    /// アプリの起動/終了を監視して未起動警告を再評価する。
+    /// 全アプリで発火するが評価は軽量なのでデバウンスは不要。
+    private func observeAppRunningChanges() {
+        let nc = NSWorkspace.shared.notificationCenter
+        for name in [NSWorkspace.didLaunchApplicationNotification,
+                     NSWorkspace.didTerminateApplicationNotification] {
+            nc.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.refreshWarning() }
+            }
+        }
+    }
+
+    /// 選択済みの管理対象アプリが未起動かを評価し、メニューバーアイコンの警告バッジへ反映する。
+    /// 設定で警告が無効なら常に非表示にする。
+    private func refreshWarning() {
+        let missing = settings.managedApps.warnWhenAppsNotRunning
+            && KunAppMatcher.hasMissingManagedApps(
+                catalog: catalog,
+                enabled: settings.managedApps.enabledBundleIDs,
+                running: KunAppScanner.runningBundleIDs())
+        statusBar?.setManagedAppsMissing(missing)
     }
 
     /// 管理対象アプリから届いた「アップデートあり/なし」を集約し、アイコンの赤バッジと
@@ -87,6 +114,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     self.settings = newSettings
                     try? self.store.save(newSettings)
                     self.hub.broadcastSync()
+                    // 対象集合や警告設定の変更を未起動警告に即反映する。
+                    self.refreshWarning()
                 }
             )
         }

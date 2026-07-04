@@ -47,6 +47,7 @@
 /* Managed apps tab */
 "managed_apps.description" = "1つのアイコンにまとめる kun アプリを選びます。選んだアプリは自分のメニューバーアイコンを隠し、Kuntraykun のアイコンから開けるようになります（対応アプリのみ）。右の ▲▼ ボタンで並べ替えると、その順序でプルダウンに表示されます。";
 "managed_apps.empty" = "まとめられる kun アプリが /Applications に見つかりません。";
+"managed_apps.warn_not_running" = "選択したアプリが起動していないとき警告を表示";
 
 /* Common buttons */
 "button.ok" = "OK";

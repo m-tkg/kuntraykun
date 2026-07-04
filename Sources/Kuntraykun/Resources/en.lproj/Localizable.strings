@@ -47,6 +47,7 @@
 /* Managed apps tab */
 "managed_apps.description" = "Choose the kun apps to consolidate into a single icon. Selected apps hide their own menu bar icon and become reachable from Kuntraykun’s icon (supported apps only). Use the ▲▼ buttons to reorder; the pulldown follows this order.";
 "managed_apps.empty" = "No manageable kun apps were found in /Applications.";
+"managed_apps.warn_not_running" = "Show a warning when a selected app isn’t running";
 
 /* Common buttons */
 "button.ok" = "OK";
