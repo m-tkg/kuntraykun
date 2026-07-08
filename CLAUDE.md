@@ -157,9 +157,17 @@ whisperkun …）を全部起動するとメニューバーのアイコンが増
 ## 連携プロトコル（重要）
 - macOS では他プロセスの `NSStatusItem` メニューを取得して自前描画できない。そこで**各 kun アプリ側に連携の口**を
   実装してもらい、`DistributedNotificationCenter`（分散通知）で協調する。
-- 仕様は **`docs/kun-integration-protocol.md`**。定数とモデルは共有ライブラリ
-  [kunkit](https://github.com/m-tkg/kunkit) の `KunIntegrationProtocol`、
-  kuntraykun 側の送受信は `Sources/Kuntraykun/IntegrationHub.swift`。
+- 仕様は **`docs/kun-integration-protocol.md`**。
+- **実装は共有ライブラリ [kunkit](https://github.com/m-tkg/kunkit) と分担する**:
+  - `KunIntegrationProtocol`（kunkit）: 通知名・userInfo キー・共有パス・基底 bundleID・`MenuSnapshot` モデル。
+    kuntraykun 本体と各 kun アプリの両方が参照し、定数の二重管理をしない。
+  - `KunIntegrationBridge`（kunkit）: 各 kun アプリ側の実装本体（Bridge / IconExport / MenuExport）。
+    kuntraykun 本体は使わない。
+  - kuntraykun 側（本リポジトリ）: 送受信は `Sources/Kuntraykun/IntegrationHub.swift`、
+    スナップショットのキャッシュは `MenuSnapshotStore.swift`、サブメニュー構築は `KunSubmenuBuilder.swift`。
+- **kunkit の更新運用**: プロトコルの変更・修正は kunkit 側（TDD）で行って semver タグを発行し、
+  本リポジトリは `swift package update kunkit` で追従する（`Package.resolved` を追跡しているので
+  resolved の変更もコミットする。`from: "1.0.0"` 指定のため 1.x は自動追従、破壊的変更はメジャー）。
 - 通知: `com.mtkg.kuntraykun.sync`（対象集合のブロードキャスト）/ `com.mtkg.kuntraykun.showMenu`（メニュー表示依頼）/
   `com.mtkg.kun.appLaunched`（アプリ→ハブの起動通知）。userInfo の値は文字列のみ。
 - v4（サブメニュー表示）: 各アプリがメニュー構造の JSON を `Kuntraykun/Menus/<基底ID>.json` へ書き出し
