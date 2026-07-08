@@ -1,6 +1,7 @@
 import SwiftUI
 import AppKit
 import KuntraykunCore
+import KunIntegrationProtocol
 
 /// 設定の編集状態。変更は**即時反映**する（Apply/OK ボタンは持たない）。
 @MainActor

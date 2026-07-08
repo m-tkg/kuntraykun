@@ -1,5 +1,6 @@
 import AppKit
 import KuntraykunCore
+import KunIntegrationProtocol
 
 /// kun アプリの一覧表示に使うアイコンを解決する。
 enum KunAppIcon {

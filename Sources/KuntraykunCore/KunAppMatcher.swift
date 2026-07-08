@@ -1,4 +1,5 @@
 import Foundation
+import KunIntegrationProtocol
 
 /// kun アプリの判定・絞り込みを行う純粋ロジック（AppKit 非依存・テスト対象）。
 public enum KunAppMatcher {

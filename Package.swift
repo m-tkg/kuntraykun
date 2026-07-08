@@ -8,15 +8,25 @@ let package = Package(
     platforms: [
         .macOS(.v13)
     ],
+    dependencies: [
+        // 連携プロトコル定数・メニュースナップショットモデルの共有ライブラリ（kun シリーズ共通）
+        .package(url: "https://github.com/m-tkg/kunkit.git", from: "1.0.0")
+    ],
     targets: [
-        // 純粋ロジック（テスト対象）: AppKit に依存しない判定ロジック・設定モデル・連携プロトコル定数
+        // 純粋ロジック（テスト対象）: AppKit に依存しない判定ロジック・設定モデル
         .target(
-            name: "KuntraykunCore"
+            name: "KuntraykunCore",
+            dependencies: [
+                .product(name: "KunIntegrationProtocol", package: "kunkit")
+            ]
         ),
         // 実行ファイル本体: メニューバー常駐・アプリ検出・分散通知連携・設定UI
         .executableTarget(
             name: "Kuntraykun",
-            dependencies: ["KuntraykunCore"],
+            dependencies: [
+                "KuntraykunCore",
+                .product(name: "KunIntegrationProtocol", package: "kunkit"),
+            ],
             // en.lproj / ja.lproj の Localizable.strings をリソースバンドルに含める。
             resources: [
                 .process("Resources")
