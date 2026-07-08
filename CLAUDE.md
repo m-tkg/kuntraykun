@@ -161,6 +161,10 @@ whisperkun …）を全部起動するとメニューバーのアイコンが増
   kuntraykun 側の送受信は `Sources/Kuntraykun/IntegrationHub.swift`。
 - 通知: `com.mtkg.kuntraykun.sync`（対象集合のブロードキャスト）/ `com.mtkg.kuntraykun.showMenu`（メニュー表示依頼）/
   `com.mtkg.kun.appLaunched`（アプリ→ハブの起動通知）。userInfo の値は文字列のみ。
+- v4（サブメニュー表示）: 各アプリがメニュー構造の JSON を `Kuntraykun/Menus/<基底ID>.json` へ書き出し
+  （`com.mtkg.kuntraykun.requestMenu` / `com.mtkg.kun.menuSnapshot`）、kuntraykun がサブメニューとして再構築、
+  項目クリックを `com.mtkg.kuntraykun.invokeMenuItem`（世代トークン一致時のみ実行）で依頼し返す。
+  未対応アプリは従来のクリック → showMenu popUp にフォールバック。
 - 管理対象アプリ側の表示規則: `アイコンを隠す = (管理対象フラグ ON) かつ (kuntraykun 起動中)`。
   kuntraykun 未起動ならフォールバックでアイコンを出す（操作不能を防ぐ）。
 - **Accessibility 権限は使わない**（AX 案は不採用）。
