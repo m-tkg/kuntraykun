@@ -165,6 +165,7 @@ whisperkun …）を全部起動するとメニューバーのアイコンが増
     kuntraykun 本体は使わない。
   - kuntraykun 側（本リポジトリ）: 送受信は `Sources/Kuntraykun/IntegrationHub.swift`、
     スナップショットのキャッシュは `MenuSnapshotStore.swift`、サブメニュー構築は `KunSubmenuBuilder.swift`。
+- **kunkit 由来の共通実装**: 自己更新（`SelfUpdater`）・ログイン項目（`LoginItemController`）・多重起動防止（`KunAppLaunch`、`main.swift`）・設定永続化（`KunSettingsStore`）・外部プロセス実行（`ProcessRunner`）・更新チェック（`GitHubReleaseFetcher` / `ReleaseInfo` / `VersionComparator` / `KunUpdateSchedule` / `ReleaseDownloader`）は kunkit（`KunAppKit` / `KunSupport` / `KunUpdateKit`）が提供する。アプリ側に複製は持たず、アプリ名・文言・repo は注入する。
 - **kunkit の更新運用**: プロトコルの変更・修正は kunkit 側（TDD）で行って semver タグを発行し、
   本リポジトリは `swift package update kunkit` で追従する（`Package.resolved` を追跡しているので
   resolved の変更もコミットする。`from: "1.0.0"` 指定のため 1.x は自動追従、破壊的変更はメジャー）。

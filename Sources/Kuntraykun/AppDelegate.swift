@@ -1,7 +1,9 @@
 import AppKit
-import OSLog
+import KunAppKit
 import KunIntegrationProtocol
+import KunSupport
 import KunUpdateKit
+import OSLog
 import KuntraykunCore
 
 private let log = Logger(subsystem: "com.mtkg.kuntraykun", category: "app")
@@ -10,7 +12,8 @@ private let log = Logger(subsystem: "com.mtkg.kuntraykun", category: "app")
 /// 連携ハブ（分散通知）の起動を担う。
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
-    private let store = SettingsStore(url: SettingsStore.defaultURL())
+    private let store = KunSettingsStore<Settings>(
+        url: KunSettingsStore<Settings>.defaultURL(appFolderName: "Kuntraykun"), defaultValue: .default)
     private var settings = Settings.default
 
     /// /Applications から検出した kun アプリのカタログ。
@@ -30,7 +33,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     // アップデート関連。
     private let updateService = UpdateService()
-    private lazy var selfUpdater = SelfUpdater(service: updateService)
+    private let selfUpdater = SelfUpdater(appName: "Kuntraykun")
     private var availableRelease: ReleaseInfo?
 
     /// 未起動警告の定期再評価用タイマー。

@@ -1,4 +1,5 @@
 import AppKit
+import KunAppKit
 import SwiftUI
 import KuntraykunCore
 
@@ -9,7 +10,8 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
     private var window: NSWindow?
     private let viewModel: SettingsViewModel
     private let catalog: [KunApp]
-    private let loginItem = LoginItemController()
+    private let loginItem = LoginItemController(
+        requiresApprovalMessage: { L.string("login_item.requires_approval") })
 
     init(
         initialSettings: KuntraykunCore.Settings,
