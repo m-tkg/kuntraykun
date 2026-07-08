@@ -157,7 +157,8 @@ whisperkun …）を全部起動するとメニューバーのアイコンが増
 ## 連携プロトコル（重要）
 - macOS では他プロセスの `NSStatusItem` メニューを取得して自前描画できない。そこで**各 kun アプリ側に連携の口**を
   実装してもらい、`DistributedNotificationCenter`（分散通知）で協調する。
-- 仕様は **`docs/kun-integration-protocol.md`**。定数は `KuntraykunCore/IntegrationProtocol.swift`、
+- 仕様は **`docs/kun-integration-protocol.md`**。定数とモデルは共有ライブラリ
+  [kunkit](https://github.com/m-tkg/kunkit) の `KunIntegrationProtocol`、
   kuntraykun 側の送受信は `Sources/Kuntraykun/IntegrationHub.swift`。
 - 通知: `com.mtkg.kuntraykun.sync`（対象集合のブロードキャスト）/ `com.mtkg.kuntraykun.showMenu`（メニュー表示依頼）/
   `com.mtkg.kun.appLaunched`（アプリ→ハブの起動通知）。userInfo の値は文字列のみ。

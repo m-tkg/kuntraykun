@@ -1,6 +1,7 @@
 import AppKit
 import OSLog
 import KuntraykunCore
+import KunIntegrationProtocol
 
 private let log = Logger(subsystem: "com.mtkg.kuntraykun", category: "integration")
 

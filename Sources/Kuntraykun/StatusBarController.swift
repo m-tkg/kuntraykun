@@ -1,5 +1,6 @@
 import AppKit
 import KuntraykunCore
+import KunIntegrationProtocol
 
 /// メニューバー常駐アイコンとメニューを管理する。
 ///
