@@ -26,6 +26,7 @@ let package = Package(
             dependencies: [
                 "KuntraykunCore",
                 .product(name: "KunIntegrationProtocol", package: "kunkit"),
+                .product(name: "KunUpdateKit", package: "kunkit"),
             ],
             // en.lproj / ja.lproj の Localizable.strings をリソースバンドルに含める。
             resources: [
