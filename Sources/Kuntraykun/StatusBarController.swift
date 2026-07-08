@@ -191,13 +191,15 @@ final class StatusBarController: NSObject, NSMenuDelegate {
                 if appsWithUpdate.contains(IntegrationProtocol.baseBundleID(app.bundleID)) {
                     item.attributedTitle = Self.titleWithUpdateDot(app.displayName)
                 }
-                if let snapshot = snapshotProvider(app) {
+                if let snapshot = snapshotProvider(app), !snapshot.items.isEmpty {
                     // v4 対応アプリ: メニューを閉じずに項目を選べるサブメニューを付ける。
                     item.submenu = KunSubmenuBuilder.build(from: snapshot) { [weak self] itemID in
                         self?.onInvokeItem(app, itemID, snapshot.generation)
                     }
                 } else {
-                    // 未対応アプリ: 従来どおりクリックで相手に popUp してもらう。
+                    // 未対応アプリ、またはスナップショットが空（書き出し側の不具合等）のアプリ:
+                    // 空のサブメニューを付けると開けない項目になり popUp も効かなくなるため、
+                    // 従来どおりクリックで相手に popUp してもらうフォールバックに落とす。
                     item.action = #selector(handleSelectApp(_:))
                     item.target = self
                 }
