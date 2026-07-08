@@ -85,6 +85,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// 選択済みの管理対象アプリが未起動かを評価し、メニューバーアイコンの警告バッジへ反映する。
     /// 設定で警告が無効なら常に非表示にする。
+    /// 併せて「更新あり」バッジも再評価する（報告したアプリの終了・設定変更を追随させる）。
     private func refreshWarning() {
         let missing = settings.managedApps.warnWhenAppsNotRunning
             && KunAppMatcher.hasMissingManagedApps(
@@ -92,6 +93,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 enabled: settings.managedApps.enabledBundleIDs,
                 running: KunAppScanner.runningBundleIDs())
         statusBar?.setManagedAppsMissing(missing)
+        pushAppsWithUpdate()
     }
 
     /// 管理対象アプリから届いた「アップデートあり/なし」を集約し、アイコンの赤バッジと
@@ -100,7 +102,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let changed: Bool
         if hasUpdate { changed = appsWithUpdate.insert(baseID).inserted }
         else { changed = appsWithUpdate.remove(baseID) != nil }
-        if changed { statusBar?.setAppsWithUpdate(appsWithUpdate) }
+        if changed { pushAppsWithUpdate() }
+    }
+
+    /// 「更新あり」集合を**プルダウンに表示される対象（選択済み かつ 実行中）に絞って**反映する。
+    /// 管理対象外・終了済みのアプリの報告でバッジだけが点く（赤丸の行が無いのに原因が見えない）
+    /// 状態を防ぐ。生の報告は appsWithUpdate に保持し、後から選択/起動されたら反映される。
+    private func pushAppsWithUpdate() {
+        let displayedBase = Set(displayedApps().map { IntegrationProtocol.baseBundleID($0.bundleID) })
+        statusBar?.setAppsWithUpdate(appsWithUpdate.intersection(displayedBase))
     }
 
     /// メニューに表示する対象アプリ（選択済み かつ 実行中）。
