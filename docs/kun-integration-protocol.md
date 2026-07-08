@@ -133,9 +133,11 @@ kuntraykun がそれをサブメニューとして再構築、クリックを `i
   （アクションの副作用が済むよう次のランループに逃がすとよい）。
 
 ### アプリ側の実装注意
-- シリアライズ前に `menu.update()` を呼び、`enabled` を確定させてから読む（autoenablesItems のメニューでは
-  update 前の値が不定）。
-- **メニュー表示中のエクスポートは保留が必要**。`menu.update()` は delegate の `menuNeedsUpdate` を
+- シリアライズ前に、**動的メニュー（delegate が `menuNeedsUpdate` で再構築）は delegate を明示的に呼んで
+  populate し**（⚠️ `NSMenu.update()` は `menuNeedsUpdate` を**呼ばない**。実機確認済み。怠ると items が空になる）、
+  続けて `menu.update()` で `enabled` を確定させてから読む（autoenablesItems のメニューでは update 前の値が不定）。
+  kunkit の `KuntraykunMenuExport.makeSnapshot` がこの順序で行う。
+- **メニュー表示中のエクスポートは保留が必要**。シリアライズが delegate の `menuNeedsUpdate` を
   同期的に呼ぶため、自分のメニューを表示（トラッキング）中に requestMenu 等でエクスポートが走ると、
   **開いているメニューが再構築されて表示が壊れる**。kunkit の `KuntraykunBridge` が `trackingMenu` の
   トラッキング通知（`NSMenu.didBegin/didEndTracking`）を観測して自動で保留・close 後に書き出すので、
