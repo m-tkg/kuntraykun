@@ -19,13 +19,18 @@ final class IntegrationHub {
     private let enabledProvider: () -> Set<String>
     /// 各アプリの「アップデートあり」状態が届いたときの通知（基底 bundleID, あり/なし）。
     private let onUpdateState: (String, Bool) -> Void
+    /// 各アプリがメニュースナップショットを書き出したときの通知（基底 bundleID）（v4）。
+    private let onMenuSnapshot: (String) -> Void
     private var appLaunchedObserver: NSObjectProtocol?
     private var updateStateObserver: NSObjectProtocol?
+    private var menuSnapshotObserver: NSObjectProtocol?
 
     init(enabledProvider: @escaping () -> Set<String>,
-         onUpdateState: @escaping (String, Bool) -> Void) {
+         onUpdateState: @escaping (String, Bool) -> Void,
+         onMenuSnapshot: @escaping (String) -> Void) {
         self.enabledProvider = enabledProvider
         self.onUpdateState = onUpdateState
+        self.onMenuSnapshot = onMenuSnapshot
     }
 
     deinit {
@@ -33,6 +38,9 @@ final class IntegrationHub {
             DistributedNotificationCenter.default().removeObserver(observer)
         }
         if let observer = updateStateObserver {
+            DistributedNotificationCenter.default().removeObserver(observer)
+        }
+        if let observer = menuSnapshotObserver {
             DistributedNotificationCenter.default().removeObserver(observer)
         }
     }
@@ -62,6 +70,17 @@ final class IntegrationHub {
                 self?.onUpdateState(IntegrationProtocol.baseBundleID(id), hasUpdate)
             }
         }
+        // 各アプリの「メニュースナップショットを書き出した」通知を観測する（v4）。
+        menuSnapshotObserver = center.addObserver(
+            forName: Notification.Name(IntegrationProtocol.menuSnapshotNotification),
+            object: nil,
+            queue: .main
+        ) { [weak self] note in
+            MainActor.assumeIsolated {
+                guard let id = note.userInfo?[IntegrationProtocol.keyBundleID] as? String else { return }
+                self?.onMenuSnapshot(IntegrationProtocol.baseBundleID(id))
+            }
+        }
         broadcastSync()
     }
 
@@ -72,6 +91,33 @@ final class IntegrationHub {
             Notification.Name(IntegrationProtocol.syncNotification),
             object: nil,
             userInfo: [IntegrationProtocol.keyManaged: managed],
+            deliverImmediately: true
+        )
+    }
+
+    /// 対象アプリ群に、メニュースナップショットの書き出しを依頼する（v4）。
+    /// 起動時・設定変更時のキャッシュ温めと、メニューを開くたびの更新（次回オープンに反映）に使う。
+    func requestMenu<S: Sequence>(targets: S) where S.Element == String {
+        let encoded = IntegrationProtocol.encodeManaged(targets.map(IntegrationProtocol.baseBundleID))
+        guard !encoded.isEmpty else { return }
+        center.postNotificationName(
+            Notification.Name(IntegrationProtocol.requestMenuNotification),
+            object: nil,
+            userInfo: [IntegrationProtocol.keyTargets: encoded],
+            deliverImmediately: true
+        )
+    }
+
+    /// 対象アプリに、サブメニューでクリックされた項目の実行を依頼する（v4）。
+    func invokeMenuItem(target bundleID: String, itemID: String, generation: String) {
+        center.postNotificationName(
+            Notification.Name(IntegrationProtocol.invokeMenuItemNotification),
+            object: nil,
+            userInfo: [
+                IntegrationProtocol.keyTarget: IntegrationProtocol.baseBundleID(bundleID),
+                IntegrationProtocol.keyItemID: itemID,
+                IntegrationProtocol.keyGeneration: generation,
+            ],
             deliverImmediately: true
         )
     }

@@ -13,6 +13,12 @@ final class StatusBarController: NSObject, NSMenuDelegate {
 
     private let listProvider: () -> [KunApp]
     private let onSelectApp: (KunApp) -> Void
+    /// アプリのメニュースナップショット（連携 v4）。nil なら従来のクリック → showMenu 動作。
+    private let snapshotProvider: (KunApp) -> MenuSnapshot?
+    /// サブメニュー項目のクリック（アプリ・項目ID・世代）。
+    private let onInvokeItem: (KunApp, String, String) -> Void
+    /// メニューを開いたとき、表示中アプリへのスナップショット更新依頼に使う。
+    private let onMenuOpened: ([KunApp]) -> Void
     private let openSettings: () -> Void
     private let checkForUpdate: () -> Void
     private let quitApp: () -> Void
@@ -38,6 +44,9 @@ final class StatusBarController: NSObject, NSMenuDelegate {
     init(
         listProvider: @escaping () -> [KunApp],
         onSelectApp: @escaping (KunApp) -> Void,
+        snapshotProvider: @escaping (KunApp) -> MenuSnapshot?,
+        onInvokeItem: @escaping (KunApp, String, String) -> Void,
+        onMenuOpened: @escaping ([KunApp]) -> Void,
         openSettings: @escaping () -> Void,
         checkForUpdate: @escaping () -> Void,
         quit: @escaping () -> Void
@@ -45,6 +54,9 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         self.statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         self.listProvider = listProvider
         self.onSelectApp = onSelectApp
+        self.snapshotProvider = snapshotProvider
+        self.onInvokeItem = onInvokeItem
+        self.onMenuOpened = onMenuOpened
         self.openSettings = openSettings
         self.checkForUpdate = checkForUpdate
         self.quitApp = quit
@@ -172,17 +184,28 @@ final class StatusBarController: NSObject, NSMenuDelegate {
             menu.addItem(empty)
         } else {
             for app in apps {
-                let item = NSMenuItem(title: app.displayName, action: #selector(handleSelectApp(_:)), keyEquivalent: "")
-                item.target = self
+                let item = NSMenuItem(title: app.displayName, action: nil, keyEquivalent: "")
                 item.representedObject = app
                 item.image = Self.appIcon(for: app)
                 // アップデートありのアプリは行末に赤丸を付ける。
                 if appsWithUpdate.contains(IntegrationProtocol.baseBundleID(app.bundleID)) {
                     item.attributedTitle = Self.titleWithUpdateDot(app.displayName)
                 }
+                if let snapshot = snapshotProvider(app) {
+                    // v4 対応アプリ: メニューを閉じずに項目を選べるサブメニューを付ける。
+                    item.submenu = KunSubmenuBuilder.build(from: snapshot) { [weak self] itemID in
+                        self?.onInvokeItem(app, itemID, snapshot.generation)
+                    }
+                } else {
+                    // 未対応アプリ: 従来どおりクリックで相手に popUp してもらう。
+                    item.action = #selector(handleSelectApp(_:))
+                    item.target = self
+                }
                 menu.addItem(item)
             }
         }
+        // 次回オープンへ向けて最新スナップショットを依頼する（応答は非同期に届く）。
+        onMenuOpened(apps)
         menu.addItem(.separator())
 
         menu.addItem(menuItem(title: L.string("menu.settings"), action: #selector(handleOpenSettings), key: ","))
