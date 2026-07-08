@@ -1,6 +1,7 @@
 import Foundation
 import OSLog
 import KuntraykunCore
+import KunIntegrationProtocol
 
 private let log = Logger(subsystem: "com.mtkg.kuntraykun", category: "menu-snapshot")
 

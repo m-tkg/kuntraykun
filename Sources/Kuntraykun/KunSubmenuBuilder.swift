@@ -1,5 +1,6 @@
 import AppKit
 import KuntraykunCore
+import KunIntegrationProtocol
 
 /// メニュースナップショット（連携 v4）から NSMenu を再構築する。
 ///
