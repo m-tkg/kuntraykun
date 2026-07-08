@@ -135,6 +135,13 @@ kuntraykun がそれをサブメニューとして再構築、クリックを `i
 ### アプリ側の実装注意
 - シリアライズ前に `menu.update()` を呼び、`enabled` を確定させてから読む（autoenablesItems のメニューでは
   update 前の値が不定）。
+- **動的メニュー（`menuNeedsUpdate` で `removeAllItems` 再構築するアプリ）は、メニュー表示中の
+  エクスポートを保留すること**。`menu.update()` は delegate の `menuNeedsUpdate` を同期的に呼ぶため、
+  自分のメニューを表示（トラッキング）中に requestMenu 等でエクスポートが走ると、**開いているメニューが
+  再構築されて表示が壊れる**。`menuWillOpen` / `menuDidClose` で表示中フラグを持ち、表示中は保留して
+  `menuDidClose` 後に書き出す（close 直後は AppKit のトラッキング後処理が残るため
+  `DispatchQueue.main.async` で1ループ逃がすと安全。実装例: gitkun / whisperkun）。
+  静的メニュー（delegate なし）ではこの配慮は不要。
 - **非表示項目（`isHidden`）は書き出しから省くが、ID の採番は実インデックスのまま**にする。
   invoke 時にそのままインデックスで辿れる（採番を詰めると実メニューとズレて誤実行する）。
 - ウィンドウを開くアクションは従来どおりアプリ側で activate 処理を行う（showMenu 節の注意と同じ）。
