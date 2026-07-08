@@ -135,17 +135,15 @@ kuntraykun がそれをサブメニューとして再構築、クリックを `i
 ### アプリ側の実装注意
 - シリアライズ前に `menu.update()` を呼び、`enabled` を確定させてから読む（autoenablesItems のメニューでは
   update 前の値が不定）。
-- **動的メニュー（`menuNeedsUpdate` で `removeAllItems` 再構築するアプリ）は、メニュー表示中の
-  エクスポートを保留すること**。`menu.update()` は delegate の `menuNeedsUpdate` を同期的に呼ぶため、
-  自分のメニューを表示（トラッキング）中に requestMenu 等でエクスポートが走ると、**開いているメニューが
-  再構築されて表示が壊れる**。`menuWillOpen` / `menuDidClose` で表示中フラグを持ち、表示中は保留して
-  `menuDidClose` 後に書き出す（close 直後は AppKit のトラッキング後処理が残るため
-  `DispatchQueue.main.async` で1ループ逃がすと安全。実装例: gitkun / whisperkun）。
-  静的メニュー（delegate なし）ではこの配慮は不要。
+- **メニュー表示中のエクスポートは保留が必要**。`menu.update()` は delegate の `menuNeedsUpdate` を
+  同期的に呼ぶため、自分のメニューを表示（トラッキング）中に requestMenu 等でエクスポートが走ると、
+  **開いているメニューが再構築されて表示が壊れる**。kunkit の `KuntraykunBridge` が `trackingMenu` の
+  トラッキング通知（`NSMenu.didBegin/didEndTracking`）を観測して自動で保留・close 後に書き出すので、
+  書き出しは必ず `bridge.exportMenuSnapshot()` 経由で行う（`KuntraykunMenuExport.export` を直接呼ばない）。
 - **非表示項目（`isHidden`）は書き出しから省くが、ID の採番は実インデックスのまま**にする。
   invoke 時にそのままインデックスで辿れる（採番を詰めると実メニューとズレて誤実行する）。
 - ウィンドウを開くアクションは従来どおりアプリ側で activate 処理を行う（showMenu 節の注意と同じ）。
-- 実装例: clipkun の `KuntraykunMenuExport.swift`（書き出し・項目実行）と `KuntraykunBridge.swift`
+- 実装: kunkit の `KuntraykunMenuExport.swift`（書き出し・項目実行）と `KuntraykunBridge.swift`
   （requestMenu / invokeMenuItem の観測）。
 
 ### kuntraykun 側の挙動（参考）
@@ -189,81 +187,47 @@ kuntraykun がそれをサブメニューとして再構築、クリックを `i
 
 ---
 
-## 実装スケッチ（kun アプリ側 / Swift）
+## 実装方法（kun アプリ側）— 共有ライブラリ kunkit を使う
 
-通知名・キーは kuntraykun の `KuntraykunCore/IntegrationProtocol.swift` と一致させること。
+本プロトコルのアプリ側実装（v1〜v4 の全機能）は共有ライブラリ
+**[kunkit](https://github.com/m-tkg/kunkit)** にある。**新規・既存アプリとも自前実装やファイルコピーはせず、
+SPM 依存で取り込む**（本章より上の各節はプロトコルの中身の説明で、挙動理解・デバッグ時に読む）。
 
 ```swift
-import AppKit
-
-enum KunIntegration {
-    static let kuntraykunBundleID = "com.mtkg.kuntraykun"
-    static let syncName     = Notification.Name("com.mtkg.kuntraykun.sync")
-    static let showMenuName = Notification.Name("com.mtkg.kuntraykun.showMenu")
-    static let appLaunched  = Notification.Name("com.mtkg.kun.appLaunched")
-}
-
-@MainActor
-final class KuntraykunBridge {
-    private let statusItem: NSStatusItem      // 自分のメニューバー項目
-    private let menu: NSMenu                   // 自分のステータスメニュー
-    private let myBundleID: String             // 基底 bundleID（.local を除去したもの）
-    private var isManaged = false              // 永続化した管理対象フラグ
-    private var runningAppsObservation: NSKeyValueObservation?
-
-    func start() {
-        let dnc = DistributedNotificationCenter.default()
-        dnc.addObserver(self, selector: #selector(onSync(_:)),
-                        name: KunIntegration.syncName, object: nil)
-        dnc.addObserver(self, selector: #selector(onShowMenu(_:)),
-                        name: KunIntegration.showMenuName, object: nil)
-
-        // kuntraykun の起動/終了を監視してアイコン表示を再計算する。
-        // LSUIElement(メニューバー常駐)アプリは NSWorkspace.didLaunch/didTerminate 通知が配信されないため、
-        // runningApplications を KVO 監視する（kuntraykun のクラッシュ時もアイコンが復活する）。.initial で初回判定も行う。
-        runningAppsObservation = NSWorkspace.shared.observe(\.runningApplications, options: [.initial]) { [weak self] _, _ in
-            MainActor.assumeIsolated { self?.refreshIconVisibility() }
-        }
-
-        // 起動を通知（kuntraykun が最新 sync を返してくれる）
-        dnc.postNotificationName(KunIntegration.appLaunched, object: nil,
-            userInfo: ["bundleID": myBundleID, "protocol": "1"], deliverImmediately: true)
-    }
-
-    @objc private func onSync(_ note: Notification) {
-        let managed = (note.userInfo?["managed"] as? String ?? "")
-            .split(separator: ",").map(String.init)
-        isManaged = managed.contains(myBundleID)
-        persistManagedFlag(isManaged)        // 各アプリの設定に保存
-        refreshIconVisibility()
-    }
-
-    @objc private func onShowMenu(_ note: Notification) {
-        guard note.userInfo?["target"] as? String == myBundleID,
-              let xs = note.userInfo?["x"] as? String, let x = Double(xs),
-              let ys = note.userInfo?["y"] as? String, let y = Double(ys) else { return }
-        // 非アクティブ（LSUIElement）のままだと popUp が表示に失敗することがある。
-        NSApp.activate(ignoringOtherApps: true)
-        menu.popUp(positioning: nil, at: NSPoint(x: x, y: y), in: nil)
-    }
-
-    @objc private func refreshIconVisibility() {
-        // NSRunningApplication.runningApplications(withBundleIdentifier:) は実行中でも空を返すことがあるため、
-        // KVO 対象と同じ NSWorkspace.shared.runningApplications で判定する。
-        let hubRunning = NSWorkspace.shared.runningApplications.contains {
-            $0.bundleIdentifier == KunIntegration.kuntraykunBundleID
-        }
-        statusItem.isVisible = !(isManaged && hubRunning)
-    }
-}
+// Package.swift
+.package(url: "https://github.com/m-tkg/kunkit.git", from: "1.0.0"),
+// executableTarget の dependencies に
+.product(name: "KunIntegrationBridge", package: "kunkit"),
 ```
 
-> 基底 bundleID: ローカル検証ビルド（`com.mtkg.<app>.local`）でも一致させたい場合は、
-> 比較前に末尾 `.local` を除去した基底 ID で突き合わせる。
+```swift
+import KunIntegrationBridge
+
+// AppDelegate の起動処理（statusItem / menu は自分のステータスバー実装のもの）
+let bridge = KuntraykunBridge(statusItem: statusItem, menu: menu) // 標準配線
+bridge.start()  // 観測開始・appLaunched 送信・初回メニュー書き出しまで行う
+kuntraykunBridge = bridge
+
+// アップデート有無が変わったら（v3）
+kuntraykunBridge?.reportUpdate(hasUpdate)
+// メニュー文言・チェック状態が変わったら（v4。表示中は自動保留）
+kuntraykunBridge?.exportMenuSnapshot()
+// アイコンを設定する箇所すべてで（v2）
+KuntraykunIconExport.export(statusItem.button?.image)
+```
+
+- 標準配線 `init(statusItem:menu:)` は「隠す（`isVisible`）／popUp（activate 込み）／メニュー書き出し／
+  項目実行／表示中の書き出し保留」まで既定実装する。特殊な配線が必要なアプリは
+  クロージャ版 `init(setHidden:popUpMenu:exportMenu:performMenuItem:trackingMenu:)` を使う。
+- 通知名・キー・`MenuSnapshot` モデルの定義は kunkit の `KunIntegrationProtocol` ターゲットにあり、
+  kuntraykun 本体（ハブ側）も同じ定義を参照する（定数の二重管理はしない）。
+- 基底 bundleID（末尾 `.local` の除去）も kunkit が処理する。
+- 配線の実例: clipkun（`StatusBarController.makeKuntraykunBridge()` と `onMenuContentChanged`）。
 
 ---
 
-## 段階導入
-1. まず1つの kun アプリ（例 Clipkun）に本プロトコルを実装し、kuntraykun と end-to-end 検証する。
-2. 問題なければ残りの kun アプリへ展開する。
-3. 共通テンプレート（`CLAUDE_base.md`）にも「Kuntraykun 連携」章を追加し、新規 kun アプリが標準対応できるようにする。
+## 段階導入（経緯）
+1. まず1つの kun アプリ（Clipkun）に本プロトコルを実装し、kuntraykun と end-to-end 検証した。
+2. 残りの kun アプリ（gitkun / keykun / pointerkun / snapperkun / whisperkun）へ展開した。
+3. 各アプリに複製していた実装を共有ライブラリ kunkit へ集約した（現行の形）。
+   共通テンプレート（`CLAUDE_base.md`）の「Kuntraykun 連携」章も kunkit ベースの記述になっている。
