@@ -10,7 +10,7 @@ let package = Package(
     ],
     dependencies: [
         // 連携プロトコル定数・メニュースナップショットモデルの共有ライブラリ（kun シリーズ共通）
-        .package(url: "https://github.com/m-tkg/kunkit.git", from: "1.2.0")
+        .package(url: "https://github.com/m-tkg/kunkit.git", from: "1.3.0")
     ],
     targets: [
         // 純粋ロジック（テスト対象）: AppKit に依存しない判定ロジック・設定モデル
@@ -27,6 +27,8 @@ let package = Package(
                 "KuntraykunCore",
                 .product(name: "KunIntegrationProtocol", package: "kunkit"),
                 .product(name: "KunUpdateKit", package: "kunkit"),
+                .product(name: "KunSupport", package: "kunkit"),
+                .product(name: "KunAppKit", package: "kunkit"),
             ],
             // en.lproj / ja.lproj の Localizable.strings をリソースバンドルに含める。
             resources: [

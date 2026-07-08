@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import KunAppKit
 import KuntraykunCore
 import KunIntegrationProtocol
 
