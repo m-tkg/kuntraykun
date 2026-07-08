@@ -1,6 +1,6 @@
 import AppKit
 import OSLog
-import KuntraykunCore
+import KunUpdateKit
 
 private let logger = Logger(subsystem: "com.mtkg.kuntraykun", category: "SelfUpdater")
 

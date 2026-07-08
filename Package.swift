@@ -10,7 +10,7 @@ let package = Package(
     ],
     dependencies: [
         // 連携プロトコル定数・メニュースナップショットモデルの共有ライブラリ（kun シリーズ共通）
-        .package(url: "https://github.com/m-tkg/kunkit.git", from: "1.0.0")
+        .package(url: "https://github.com/m-tkg/kunkit.git", from: "1.2.0")
     ],
     targets: [
         // 純粋ロジック（テスト対象）: AppKit に依存しない判定ロジック・設定モデル
