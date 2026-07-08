@@ -20,6 +20,11 @@ public enum IntegrationProtocol {
     /// テンプレート画像の場合は併せて空ファイル `<基底bundleID>.template` を書き出す。kuntraykun がこれを読んで一覧に表示する。
     public static let sharedIconDirRelativePath = "Kuntraykun/MenuBarIcons"
 
+    /// v4: 各アプリがメニュー構造のスナップショット（`MenuSnapshot` の JSON）を書き出す共有ディレクトリ
+    /// （`~/Library/Application Support/` からの相対パス）。ファイル名は `<基底bundleID>.json`。
+    /// 原子的に書き込んでから `menuSnapshot` 通知を送ること。
+    public static let sharedMenuDirRelativePath = "Kuntraykun/Menus"
+
     // MARK: 通知名
 
     /// kuntraykun → 全アプリ。対象集合を知らせる（冪等ブロードキャスト）。
@@ -31,6 +36,15 @@ public enum IntegrationProtocol {
     /// アプリ → kuntraykun。自分に「アップデートあり」かどうかを知らせる（v3）。
     /// kuntraykun は集約してアイコンの赤バッジ・プルダウンの赤丸に反映する。
     public static let updateStateNotification = "com.mtkg.kun.updateState"
+    /// kuntraykun → アプリ。メニュースナップショットの書き出しを依頼する（v4）。
+    /// userInfo の `targets` に含まれるアプリが応じる。
+    public static let requestMenuNotification = "com.mtkg.kuntraykun.requestMenu"
+    /// アプリ → kuntraykun。メニュースナップショットを共有ファイルへ書き出したことを知らせる（v4）。
+    /// requestMenu 受信時・メニュー内容の変化時・起動時に送る。
+    public static let menuSnapshotNotification = "com.mtkg.kun.menuSnapshot"
+    /// kuntraykun → 対象1アプリ。サブメニューでクリックされた項目の実行を依頼する（v4）。
+    /// アプリは `generation` が現行世代と一致する場合のみ実行する。
+    public static let invokeMenuItemNotification = "com.mtkg.kuntraykun.invokeMenuItem"
 
     // MARK: userInfo キー
 
@@ -48,6 +62,12 @@ public enum IntegrationProtocol {
     public static let keyProtocol = "protocol"
     /// updateState: アップデートの有無（"1"=あり / "0"=なし）。
     public static let keyHasUpdate = "hasUpdate"
+    /// requestMenu: カンマ区切りの依頼先基底 bundleID 群（encodeManaged/decodeManaged を使う）。
+    public static let keyTargets = "targets"
+    /// menuSnapshot / invokeMenuItem: スナップショットの世代トークン。
+    public static let keyGeneration = "generation"
+    /// invokeMenuItem: 実行対象の項目 ID（`MenuSnapshot` の ID 規則）。
+    public static let keyItemID = "itemID"
 
     /// 末尾 `.local`（ローカル検証ビルド）を取り除いた基底 bundle ID。
     /// ローカルビルドでも本番 ID として突き合わせられるようにする。
