@@ -18,8 +18,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var settingsWindowController: SettingsWindowController?
     private lazy var hub = IntegrationHub(
         enabledProvider: { [weak self] in self?.settings.managedApps.enabledBundleIDs ?? [] },
-        onUpdateState: { [weak self] baseID, hasUpdate in self?.handleUpdateState(baseID, hasUpdate) }
+        onUpdateState: { [weak self] baseID, hasUpdate in self?.handleUpdateState(baseID, hasUpdate) },
+        onMenuSnapshot: { [weak self] baseID in self?.menuSnapshots.reload(baseID: baseID) }
     )
+    /// 各アプリのメニュースナップショット（連携 v4）のキャッシュ。
+    private let menuSnapshots = MenuSnapshotStore()
     /// 「アップデートあり」を報告してきた管理対象アプリの基底 bundle ID 集合。
     private var appsWithUpdate: Set<String> = []
 
@@ -38,6 +41,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusBar = StatusBarController(
             listProvider: { [weak self] in self?.displayedApps() ?? [] },
             onSelectApp: { [weak self] app in self?.showAppMenu(app) },
+            snapshotProvider: { [weak self] app in
+                self?.menuSnapshots.snapshot(for: IntegrationProtocol.baseBundleID(app.bundleID))
+            },
+            onInvokeItem: { [weak self] app, itemID, generation in
+                self?.hub.invokeMenuItem(target: app.bundleID, itemID: itemID, generation: generation)
+            },
+            onMenuOpened: { [weak self] apps in
+                self?.hub.requestMenu(targets: apps.map(\.bundleID))
+            },
             openSettings: { [weak self] in self?.openSettings() },
             checkForUpdate: { [weak self] in self?.startUpdateCheck(interactive: true) },
             quit: { NSApp.terminate(nil) }
@@ -45,6 +57,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         // 連携ハブを開始（起動時の sync をブロードキャスト）。
         hub.start()
+        // サブメニュー（連携 v4）のキャッシュを温める。応答が来たアプリだけサブメニュー表示になる。
+        hub.requestMenu(targets: settings.managedApps.enabledBundleIDs)
 
         // 管理対象アプリの起動/終了で警告バッジを更新する（メニューを開かなくても常時最新化）。
         startWarningRefreshTimer()
@@ -119,6 +133,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     self.settings = newSettings
                     try? self.store.save(newSettings)
                     self.hub.broadcastSync()
+                    // 追加されたアプリのサブメニューを次のオープンまでに用意する。
+                    self.hub.requestMenu(targets: newSettings.managedApps.enabledBundleIDs)
                     // 対象集合や警告設定の変更を未起動警告に即反映する。
                     self.refreshWarning()
                 }
